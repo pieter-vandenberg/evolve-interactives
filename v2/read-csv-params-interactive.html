@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>read_csv parameters</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FAF5EC;--panel:#FFFDF8;--ink:#211C17;--ink-soft:#6E665A;
+    --line:#E6DCC9;--line-strong:#D3C6AC;--accent:#BC4326;--accent-soft:#F4DDD2;
+    --float:#2F6B4F;--float-soft:#DCEFE4;--obj:#6E665A;
+    --radius:14px;--mono:'IBM Plex Mono',ui-monospace,monospace;--sans:'DM Sans',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:720px;margin:0 auto;padding:20px}
+  .stage{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:22px}
+  .siglabel{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);font-weight:600;margin:0 0 8px}
+
+  .raw{font-family:var(--mono);font-size:12px;background:#211C17;color:#E9DFD0;border-radius:10px;padding:13px 15px;overflow-x:auto;white-space:pre;line-height:1.7;margin:0 0 20px}
+
+  .controls{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:20px}
+  .ctrl .lab{font-family:var(--mono);font-size:13px;margin-bottom:7px;color:var(--ink)}
+  .ctrl .lab b{color:var(--accent);font-weight:600}
+  .seg{display:inline-flex;gap:7px;flex-wrap:wrap}
+  .seg button{font-family:var(--mono);font-weight:600;font-size:13px;border:1.5px solid var(--line-strong);background:#fff;color:var(--ink);border-radius:8px;padding:7px 13px;cursor:pointer;transition:.15s}
+  .seg button[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+
+  .expr{font-family:var(--mono);font-size:13px;background:#211C17;color:#F4ECDD;border-radius:9px;padding:13px 15px;margin:0 0 18px;overflow-x:auto;line-height:1.7;white-space:pre}
+  .expr .p{color:#E8A88F}
+
+  .gridScroll{overflow-x:auto}
+  table{border-collapse:collapse;font-family:var(--mono);font-size:12px;min-width:100%}
+  th,td{border:1px solid var(--line);padding:6px 9px;text-align:left;white-space:nowrap}
+  th{background:var(--accent-soft);font-weight:600}
+  th .dtype{display:block;font-size:10px;font-weight:600;margin-top:3px}
+  th.float{background:var(--float-soft)} th.float .dtype{color:var(--float)} th.obj .dtype{color:var(--obj)}
+  td.num{color:var(--float);font-weight:600}
+  td.nan{color:var(--ink-soft);font-style:italic;background:repeating-linear-gradient(135deg,#fff,#fff 5px,#f3ead9 5px,#f3ead9 7px)}
+  .idxcol{background:#faf5ec;color:var(--ink-soft);font-weight:600}
+
+  .foot{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:16px;flex-wrap:wrap}
+  .simplify{font-size:11px;color:var(--ink-soft)}
+  .reset{font-family:var(--sans);font-weight:600;font-size:13px;border:1.5px solid var(--line-strong);background:transparent;color:var(--ink-soft);border-radius:999px;padding:7px 16px;cursor:pointer;transition:.15s}
+  .reset:hover{border-color:var(--ink);color:var(--ink)}
+  .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);border:0}
+  :focus-visible{outline:2.5px solid var(--accent);outline-offset:3px;border-radius:8px}
+  @media (max-width:600px){.controls{grid-template-columns:1fr}}
+  @media (prefers-reduced-motion:reduce){*{transition:none !important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1 class="sr-only">Interactive: read_csv parameters. Change sep, decimal, header and names to see how the same raw file parses into a table.</h1>
+  <div class="stage">
+    <p class="siglabel">raw file</p>
+    <div class="raw" id="raw" aria-label="Raw file contents, pipe-separated with comma decimals."></div>
+
+    <div class="controls">
+      <div class="ctrl"><div class="lab"><b>sep</b> =</div><div class="seg" data-key="sep" role="group" aria-label="Separator"><button data-v="," type="button">','</button><button data-v="|" type="button">'|'</button></div></div>
+      <div class="ctrl"><div class="lab"><b>decimal</b> =</div><div class="seg" data-key="decimal" role="group" aria-label="Decimal"><button data-v="." type="button">'.'</button><button data-v="," type="button">','</button></div></div>
+      <div class="ctrl"><div class="lab"><b>header</b> =</div><div class="seg" data-key="header" role="group" aria-label="Header"><button data-v="infer" type="button">'infer'</button><button data-v="none" type="button">None</button></div></div>
+      <div class="ctrl"><div class="lab"><b>names</b> =</div><div class="seg" data-key="names" role="group" aria-label="Names"><button data-v="off" type="button">off</button><button data-v="on" type="button">apply</button></div></div>
+    </div>
+
+    <div class="expr" id="expr"></div>
+
+    <div class="gridScroll"><table id="grid"><thead></thead><tbody></tbody></table></div>
+
+    <div class="foot">
+      <span class="simplify">Simplified: each value between separators is treated as one field.</span>
+      <button class="reset" id="reset" type="button">Reset</button>
+    </div>
+    <p class="sr-only" id="status" role="status" aria-live="polite"></p>
+  </div>
+</div>
+
+<script>
+(function(){
+  const RAW=[
+    'Afghanistan|Kajaki Hydroelectric Power Plant|33,0|32,322|65,119|Hydro|',
+    'Afghanistan|Kandahar DOG|10,0|31,67|65,795|Solar|',
+    'Afghanistan|Kandahar JOL|10,0|31,623|65,792|Solar|',
+    'Afghanistan|Mahipar Hydroelectric Power Plant|66,0|34,556|69,4787|Hydro|',
+  ];
+  const NAMES=['country','name','capacity_mw','latitude','longitude','primary_fuel','owner'];
+  const el=id=>document.getElementById(id);
+  const state={sep:',',decimal:'.',header:'infer',names:'off'};
+  el('raw').textContent=RAW.join('\n');
+
+  function isNum(s,dec){if(s==='')return false;let t=s.trim();if(dec===',')t=t.replace(/\./g,'').replace(',','.');return /^-?\d+(\.\d+)?$/.test(t);}
+  function toNum(s,dec){let t=s.trim();if(dec===',')t=t.replace(/\./g,'').replace(',','.');return parseFloat(t);}
+
+  function render(){
+    const sep=state.sep;
+    const rows=RAW.map(l=>l.split(sep));
+    const width=Math.max(...rows.map(r=>r.length));
+    let header,data;
+    if(state.header==='infer'){header=rows[0];data=rows.slice(1);}else{header=null;data=rows.slice();}
+    let labels;
+    if(state.names==='on'){labels=NAMES.slice(0,width);while(labels.length<width)labels.push('col'+labels.length);}
+    else if(header){labels=header.slice();while(labels.length<width)labels.push('Unnamed: '+labels.length);}
+    else{labels=Array.from({length:width},(_,i)=>i);}
+
+    const dtypes=[];
+    for(let c=0;c<width;c++){let allNum=true,anyVal=false;data.forEach(r=>{const v=(r[c]??'').trim();if(v!==''){anyVal=true;if(!isNum(v,state.decimal))allNum=false;}});dtypes[c]=(anyVal&&allNum)?'float64':'object';}
+
+    const lines=[`data = pd.read_csv('gpp.csv',`,`    <span class="p">sep</span>='${sep}',`];
+    if(state.decimal===',')lines.push(`    <span class="p">decimal</span>=',',`);
+    if(state.header==='none')lines.push(`    <span class="p">header</span>=None,`);
+    if(state.names==='on')lines.push(`    <span class="p">names</span>=[...7 names...],`);
+    lines.push(')');
+    el('expr').innerHTML=lines.join('\n');
+
+    el('grid').querySelector('thead').innerHTML='<tr><th class="idxcol"></th>'+labels.map((l,c)=>`<th class="${dtypes[c]==='float64'?'float':'obj'}">${l}<span class="dtype">${dtypes[c]}</span></th>`).join('')+'</tr>';
+    el('grid').querySelector('tbody').innerHTML=data.map((r,ri)=>'<tr><td class="idxcol">'+ri+'</td>'+labels.map((_,c)=>{const v=(r[c]??'').trim();if(v==='')return '<td class="nan">NaN</td>';if(dtypes[c]==='float64')return `<td class="num">${toNum(v,state.decimal)}</td>`;return `<td>${v}</td>`;}).join('')+'</tr>').join('');
+
+    document.querySelectorAll('.seg').forEach(seg=>{const k=seg.dataset.key;seg.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===state[k]));});
+    const floats=dtypes.filter(d=>d==='float64').length;
+    el('status').textContent=`sep='${sep}', decimal='${state.decimal}', header=${state.header}, names ${state.names}: ${labels.length} columns, ${floats} numeric.`;
+  }
+  document.querySelectorAll('.seg').forEach(seg=>{const k=seg.dataset.key;seg.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{state[k]=b.dataset.v;render();}));});
+  el('reset').addEventListener('click',()=>{state.sep=',';state.decimal='.';state.header='infer';state.names='off';render();});
+  render();
+})();
+</script>
+</body>
+</html>

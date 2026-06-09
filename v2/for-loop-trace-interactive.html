@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>For-loop trace</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FAF5EC;--panel:#FFFDF8;--ink:#211C17;--ink-soft:#6E665A;
+    --line:#E6DCC9;--line-strong:#D3C6AC;--accent:#BC4326;--accent-soft:#F4DDD2;
+    --radius:14px;--mono:'IBM Plex Mono',ui-monospace,monospace;--sans:'DM Sans',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:620px;margin:0 auto;padding:20px}
+  .stage{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:22px;box-shadow:0 1px 0 var(--line),0 14px 30px -22px rgba(33,28,23,.4)}
+
+  /* controls first */
+  .bar{display:flex;flex-wrap:wrap;align-items:center;gap:9px;margin-bottom:20px}
+  button{font-family:var(--sans);font-weight:600;font-size:14px;border-radius:999px;cursor:pointer;transition:.15s}
+  .btn-primary{background:var(--ink);color:var(--paper);border:1.5px solid var(--ink);padding:10px 20px}
+  .btn-primary:hover{background:var(--accent);border-color:var(--accent)}
+  .btn-primary:disabled{opacity:.35;cursor:not-allowed;background:var(--ink);border-color:var(--ink)}
+  .btn-ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line-strong);padding:10px 14px}
+  .btn-ghost:hover{border-color:var(--ink)}
+  .btn-ghost:disabled{opacity:.35;cursor:not-allowed}
+  .spacer{flex:1}
+  .reset{background:transparent;color:var(--ink-soft);border:1.5px solid var(--line-strong);padding:8px 14px;font-size:13px}
+  .reset:hover{border-color:var(--ink);color:var(--ink)}
+
+  /* code as the visualization */
+  .code{font-family:var(--mono);font-size:14px;background:#211C17;color:#E9DFD0;border-radius:11px;padding:18px;overflow-x:auto;line-height:1.85;margin:0 0 6px}
+  .code .line{display:block;padding:0 6px;border-radius:5px;transition:background .15s}
+  .code .line.active{background:rgba(188,67,38,.40)}
+  .num{padding:1px 3px;border-radius:4px;transition:background .15s,color .15s}
+  .num.cur{background:var(--accent);color:#fff;font-weight:600}
+  .num.used{opacity:.4}
+  .kw{color:#E8A88F}
+  .var-pull{color:#F4ECDD}
+
+  table{width:100%;border-collapse:collapse;margin-top:18px;font-family:var(--mono);font-size:13.5px}
+  th,td{border:1px solid var(--line);padding:8px 10px;text-align:center}
+  th{background:var(--accent-soft);font-weight:600}
+  tbody tr.latest td{background:#fff;font-weight:600;box-shadow:inset 0 0 0 1.5px var(--accent-soft)}
+  tbody tr.latest td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
+  .empty td{color:var(--ink-soft);font-style:italic;font-family:var(--sans)}
+
+  .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);border:0}
+  :focus-visible{outline:2.5px solid var(--accent);outline-offset:3px;border-radius:8px}
+  @media (prefers-reduced-motion:reduce){*{transition:none !important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1 class="sr-only">Interactive: stepping through a for loop. Press Next to run one pass at a time and watch each score get added to a running total in the table.</h1>
+  <div class="stage">
+    <!-- CONTROLS FIRST -->
+    <div class="bar">
+      <button class="btn-primary" id="next" type="button">Next pass ▶</button>
+      <button class="btn-ghost" id="back" type="button">◀ Back</button>
+      <button class="btn-ghost" id="play" type="button">Auto-play</button>
+      <span class="spacer"></span>
+      <button class="reset" id="reset" type="button">Reset</button>
+    </div>
+
+    <!-- CODE = VISUALIZATION -->
+    <pre class="code" aria-hidden="true"><span class="line" id="ln-list">scores = [<span id="lst"></span>]</span><span class="line">total = 0</span><span class="line">k = 0</span><span class="line">&nbsp;</span><span class="line" id="ln-for"><span class="kw">for</span> score <span class="kw">in</span> scores:</span><span class="line" id="ln-k">    k = k + 1</span><span class="line" id="ln-tot">    total = total + <span class="var-pull" id="pull">score</span></span></pre>
+
+    <table>
+      <thead><tr><th>k</th><th>score pulled</th><th>total</th></tr></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+
+    <p class="sr-only" id="status" role="status" aria-live="polite"></p>
+  </div>
+</div>
+
+<script>
+(function(){
+  const SCORES=[61,99,72,87,80,95];
+  const el=id=>document.getElementById(id);
+  const tbody=el('tbody'),lst=el('lst');
+  let step=0,timer=null;
+
+  lst.innerHTML=SCORES.map((n,i)=>`<span class="num" data-i="${i}">${n}</span>`).join(', ');
+
+  function setActive(on){
+    ['ln-for','ln-k','ln-tot'].forEach(id=>el(id).classList.toggle('active',on));
+  }
+
+  function render(){
+    const total=SCORES.slice(0,step).reduce((a,b)=>a+b,0);
+    const cur=step>0?step-1:-1;
+
+    lst.querySelectorAll('.num').forEach(s=>{
+      const i=+s.dataset.i;s.classList.toggle('cur',i===cur);s.classList.toggle('used',i<cur);
+    });
+    el('pull').textContent=step>0?SCORES[cur]:'score';
+    setActive(step>0&&step<=SCORES.length);
+
+    tbody.innerHTML='';
+    if(step===0){
+      tbody.innerHTML=`<tr class="empty"><td colspan="3">before the loop · total = 0</td></tr>`;
+    }else{
+      let run=0;
+      for(let s=1;s<=step;s++){run+=SCORES[s-1];
+        const tr=document.createElement('tr');if(s===step)tr.className='latest';
+        tr.innerHTML=`<td>${s}</td><td>${SCORES[s-1]}</td><td>${run}</td>`;
+        tbody.appendChild(tr);
+      }
+    }
+    el('next').disabled=step>=SCORES.length;
+    el('back').disabled=step<=0;
+    el('status').textContent=step===0?'Before the loop. total is 0.':
+      step>=SCORES.length?`Loop finished. total is ${total}.`:
+      `Pass ${step}: pulled ${SCORES[cur]}, total is now ${total}.`;
+  }
+
+  function stopPlay(){if(timer){clearInterval(timer);timer=null;el('play').textContent='Auto-play';}}
+  el('next').addEventListener('click',()=>{if(step<SCORES.length){step++;render();}});
+  el('back').addEventListener('click',()=>{if(step>0){step--;render();}});
+  el('play').addEventListener('click',()=>{
+    if(timer){stopPlay();return;}
+    if(step>=SCORES.length)step=0;
+    el('play').textContent='Pause';
+    timer=setInterval(()=>{if(step<SCORES.length){step++;render();}else stopPlay();},850);
+  });
+  el('reset').addEventListener('click',()=>{stopPlay();step=0;render();});
+  render();
+})();
+</script>
+</body>
+</html>
