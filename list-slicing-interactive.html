@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Slicing a list · Interactive</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=DM+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FAF5EC;
+    --panel:#FFFDF8;
+    --ink:#211C17;
+    --ink-soft:#6E665A;
+    --line:#E6DCC9;
+    --line-strong:#D3C6AC;
+    --accent:#BC4326;
+    --accent-soft:#F4DDD2;
+    --sel-fill:#211C17;
+    --sel-text:#FAF5EC;
+    --radius:14px;
+    --mono:'IBM Plex Mono',ui-monospace,monospace;
+    --sans:'DM Sans',system-ui,sans-serif;
+    --disp:'Fraunces',Georgia,serif;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;background:var(--paper);color:var(--ink);
+    font-family:var(--sans);line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:760px;margin:0 auto;padding:32px 20px 48px}
+  .eyebrow{
+    font-family:var(--mono);font-size:12px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--accent);font-weight:600;margin:0 0 6px
+  }
+  h1{
+    font-family:var(--disp);font-weight:600;font-size:clamp(28px,5vw,40px);
+    line-height:1.05;margin:0 0 10px;letter-spacing:-.01em
+  }
+  .lede{color:var(--ink-soft);font-size:16px;margin:0 0 26px;max-width:54ch}
+  .lede code{font-family:var(--mono);font-size:.92em;color:var(--ink);
+    background:var(--accent-soft);padding:1px 5px;border-radius:5px}
+
+  .stage{
+    background:var(--panel);border:1px solid var(--line);
+    border-radius:var(--radius);padding:26px 22px 22px;
+    box-shadow:0 1px 0 var(--line),0 14px 30px -22px rgba(33,28,23,.4)
+  }
+
+  /* ---- the list track ---- */
+  .trackScroll{overflow-x:auto;padding-bottom:4px;margin:0 -4px}
+  .track{display:flex;gap:10px;padding:0 4px;min-width:min-content;justify-content:center}
+  .cell{flex:0 0 auto;width:96px;text-align:center;position:relative}
+  .idx{font-family:var(--mono);font-size:12px;color:var(--ink-soft);margin-bottom:6px}
+  .box{
+    font-family:var(--mono);font-size:14px;font-weight:500;
+    border:1.5px solid var(--line-strong);border-radius:10px;
+    padding:14px 6px;background:#fff;color:var(--ink);
+    transition:transform .18s ease,background .18s ease,border-color .18s ease,opacity .18s ease;
+    position:relative
+  }
+  .tick{height:18px;margin-top:6px;font-family:var(--mono);font-size:11px;color:var(--accent);font-weight:600}
+
+  /* selected: filled (not color-only — also bold + check + lift) */
+  .cell.sel .box{background:var(--sel-fill);color:var(--sel-text);border-color:var(--sel-fill);transform:translateY(-4px);font-weight:600}
+  .cell.sel .box::after{content:"\2713";position:absolute;top:4px;right:6px;font-size:11px;color:var(--accent);font-weight:700}
+  .cell.sel .idx{color:var(--ink);font-weight:600}
+
+  /* in-range but skipped by step: hatched */
+  .cell.skip .box{
+    background:repeating-linear-gradient(135deg,#fff,#fff 5px,#f0e7d6 5px,#f0e7d6 7px);
+    border-style:dashed;color:var(--ink-soft)
+  }
+  /* outside the slice: faded */
+  .cell.out .box{opacity:.4}
+
+  /* start / stop boundary markers */
+  .markers{display:flex;justify-content:center;gap:10px;margin-top:2px}
+  .mcell{width:96px;display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;font-weight:600}
+  .mStart{color:var(--accent)}
+  .mStop{color:var(--ink-soft)}
+
+  /* ---- expression + result ---- */
+  .exprRow{margin-top:24px;text-align:center}
+  .expr{
+    font-family:var(--mono);font-size:clamp(16px,3.4vw,21px);font-weight:500;
+    background:var(--accent-soft);color:var(--ink);
+    display:inline-block;padding:8px 14px;border-radius:9px
+  }
+  .arrow{display:block;color:var(--ink-soft);font-size:18px;margin:8px 0 6px}
+  .result{
+    font-family:var(--mono);font-size:clamp(15px,3vw,19px);font-weight:600;
+    color:var(--accent);min-height:1.4em
+  }
+  .resultNote{font-size:13px;color:var(--ink-soft);margin-top:4px}
+
+  /* ---- controls ---- */
+  .controls{margin-top:26px;border-top:1px solid var(--line);padding-top:22px;display:grid;gap:20px}
+  .ctrl label{display:flex;justify-content:space-between;align-items:baseline;font-weight:600;font-size:14px;margin-bottom:6px}
+  .ctrl .val{font-family:var(--mono);color:var(--accent);font-size:15px;font-weight:600}
+  .ctrl input[type=range]{width:100%;accent-color:var(--accent);height:26px;cursor:pointer}
+  .ctrl[aria-disabled="true"]{opacity:.4}
+  .ctrl[aria-disabled="true"] input{cursor:not-allowed}
+
+  .toggles{display:flex;flex-wrap:wrap;gap:10px}
+  .toggle{
+    display:inline-flex;align-items:center;gap:8px;font-size:13.5px;font-weight:500;
+    border:1.5px solid var(--line-strong);background:#fff;border-radius:999px;
+    padding:8px 14px;cursor:pointer;user-select:none;transition:.15s
+  }
+  .toggle input{accent-color:var(--accent);width:15px;height:15px;cursor:pointer}
+  .toggle.on{border-color:var(--accent);background:var(--accent-soft)}
+  .toggle code{font-family:var(--mono);font-size:.92em}
+
+  .footRow{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:22px;flex-wrap:wrap}
+  .legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:var(--ink-soft)}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .sw{width:16px;height:16px;border-radius:4px;border:1.5px solid var(--line-strong);background:#fff}
+  .sw.s{background:var(--sel-fill);border-color:var(--sel-fill)}
+  .sw.k{background:repeating-linear-gradient(135deg,#fff,#fff 3px,#f0e7d6 3px,#f0e7d6 5px);border-style:dashed}
+  .sw.o{opacity:.4}
+  .reset{
+    font-family:var(--sans);font-weight:600;font-size:14px;
+    border:1.5px solid var(--ink);background:transparent;color:var(--ink);
+    border-radius:999px;padding:9px 18px;cursor:pointer;transition:.15s
+  }
+  .reset:hover{background:var(--ink);color:var(--paper)}
+
+  .notice{
+    margin-top:22px;font-size:14px;color:var(--ink-soft);
+    border-left:3px solid var(--accent);padding:4px 0 4px 14px;max-width:56ch
+  }
+  .notice b{color:var(--ink)}
+  .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);border:0}
+
+  :focus-visible{outline:2.5px solid var(--accent);outline-offset:3px;border-radius:6px}
+
+  @media (max-width:560px){
+    .track,.markers{justify-content:flex-start}
+    .cell,.mcell{width:80px}
+    .box{font-size:12.5px;padding:12px 4px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{transition:none !important}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="eyebrow">Python · Lists</p>
+  <h1>Slicing a list</h1>
+  <p class="lede">A slice copies a <em>range</em> of elements into a brand-new list. The catch beginners trip on: it <b>includes the start</b> but <b>stops just before the end</b>. Drag the sliders and watch which elements get pulled out.</p>
+
+  <div class="stage">
+    <div class="trackScroll">
+      <div class="track" id="track" role="img" aria-label="A list named checkpoints with five elements, indexed 0 to 4."></div>
+    </div>
+    <div class="markers" id="markers" aria-hidden="true"></div>
+
+    <div class="exprRow">
+      <span class="expr" id="expr">checkpoints[1:4]</span>
+      <span class="arrow" aria-hidden="true">↓</span>
+      <div class="result" id="result">['stretch', 'breakfast', 'work']</div>
+      <div class="resultNote" id="resultNote">a new list with 3 elements</div>
+    </div>
+
+    <p class="sr-only" id="status" role="status" aria-live="polite"></p>
+
+    <div class="controls">
+      <div class="ctrl" id="ctrlStart">
+        <label for="start">start position <span class="val" id="startVal">1</span></label>
+        <input type="range" id="start" min="0" max="5" value="1" step="1"
+               aria-describedby="startVal">
+      </div>
+      <div class="ctrl" id="ctrlStop">
+        <label for="stop">stop position <span class="val" id="stopVal">4</span></label>
+        <input type="range" id="stop" min="0" max="5" value="4" step="1"
+               aria-describedby="stopVal">
+      </div>
+      <div class="ctrl" id="ctrlStep">
+        <label for="step">step <span class="val" id="stepVal">1</span></label>
+        <input type="range" id="step" min="1" max="3" value="1" step="1"
+               aria-describedby="stepVal">
+      </div>
+
+      <div class="toggles">
+        <label class="toggle" id="tStart">
+          <input type="checkbox" id="omitStart">
+          leave start blank → <code>[:stop]</code>
+        </label>
+        <label class="toggle" id="tStop">
+          <input type="checkbox" id="omitStop">
+          leave stop blank → <code>[start:]</code>
+        </label>
+      </div>
+    </div>
+
+    <div class="footRow">
+      <div class="legend" aria-hidden="true">
+        <span><i class="sw s"></i> in the slice</span>
+        <span><i class="sw k"></i> skipped by step</span>
+        <span><i class="sw o"></i> outside the slice</span>
+      </div>
+      <button class="reset" id="reset" type="button">Reset</button>
+    </div>
+  </div>
+
+  <p class="notice"><b>Try this:</b> set <code style="font-family:var(--mono)">start</code> and <code style="font-family:var(--mono)">stop</code> to the same number. Why does the new list come back empty? (Because the slice stops <em>before</em> it ever reaches an element.)</p>
+</div>
+
+<script>
+(function(){
+  const LIST = ['wake','stretch','breakfast','work','walk'];
+  const N = LIST.length;
+
+  const el = id => document.getElementById(id);
+  const track = el('track'), markers = el('markers');
+  const startI = el('start'), stopI = el('stop'), stepI = el('step');
+  const startVal = el('startVal'), stopVal = el('stopVal'), stepVal = el('stepVal');
+  const omitStart = el('omitStart'), omitStop = el('omitStop');
+  const tStart = el('tStart'), tStop = el('tStop');
+  const ctrlStart = el('ctrlStart'), ctrlStop = el('ctrlStop');
+  const exprEl = el('expr'), resultEl = el('result'), resultNote = el('resultNote'), statusEl = el('status');
+
+  // build the boxes + boundary marker slots once
+  LIST.forEach((word, i) => {
+    const cell = document.createElement('div');
+    cell.className = 'cell'; cell.dataset.i = i;
+    cell.innerHTML =
+      `<div class="idx">${i}</div>`+
+      `<div class="box">'${word}'</div>`+
+      `<div class="tick" data-tick="${i}"></div>`;
+    track.appendChild(cell);
+
+    const m = document.createElement('div');
+    m.className = 'mcell';
+    m.innerHTML = `<span class="mStart" data-ms="${i}"></span><span class="mStop" data-me="${i}"></span>`;
+    markers.appendChild(m);
+  });
+
+  function pyList(arr){
+    return '[' + arr.map(w => `'${w}'`).join(', ') + ']';
+  }
+
+  function render(){
+    const oS = omitStart.checked, oE = omitStop.checked;
+    const start = oS ? 0 : +startI.value;
+    const stop  = oE ? N : +stopI.value;
+    const step  = +stepI.value;
+
+    // disable the slider whose side is left blank
+    ctrlStart.setAttribute('aria-disabled', oS); startI.disabled = oS;
+    ctrlStop.setAttribute('aria-disabled', oE);  stopI.disabled = oE;
+    tStart.classList.toggle('on', oS);
+    tStop.classList.toggle('on', oE);
+
+    startVal.textContent = oS ? '—' : start;
+    stopVal.textContent  = oE ? '—' : stop;
+    stepVal.textContent  = step;
+
+    // which indices the slice keeps (positive-index Python semantics)
+    const kept = [];
+    for (let i = start; i < stop; i += step){ if (i >= 0 && i < N) kept.push(i); }
+    const keptSet = new Set(kept);
+
+    // paint each cell
+    track.querySelectorAll('.cell').forEach(cell => {
+      const i = +cell.dataset.i;
+      const inRange = i >= start && i < stop && i < N;
+      cell.classList.remove('sel','skip','out');
+      if (keptSet.has(i)) cell.classList.add('sel');
+      else if (inRange && step > 1) cell.classList.add('skip');
+      else cell.classList.add('out');
+      cell.querySelector('[data-tick]').textContent = '';
+    });
+
+    // boundary labels under the boxes
+    markers.querySelectorAll('[data-ms]').forEach(s => s.textContent = '');
+    markers.querySelectorAll('[data-me]').forEach(s => s.textContent = '');
+    const ms = markers.querySelector(`[data-ms="${start}"]`);
+    if (ms && start < N) ms.textContent = '↑start';
+    const me = markers.querySelector(`[data-me="${stop}"]`);
+    if (me && stop < N) me.textContent = 'stop↑';
+
+    // live expression
+    const left  = oS ? '' : String(start);
+    const right = oE ? '' : String(stop);
+    const stepPart = step > 1 ? ':' + step : '';
+    exprEl.textContent = `checkpoints[${left}:${right}${stepPart}]`;
+
+    // result
+    const out = kept.map(i => LIST[i]);
+    resultEl.textContent = pyList(out);
+    const count = out.length;
+    resultNote.textContent = count === 0
+      ? 'an empty list — the slice never reached an element'
+      : `a new list with ${count} element${count===1?'':'s'}`;
+
+    statusEl.textContent = `${exprEl.textContent} produces ${count===0 ? 'an empty list' : pyList(out)}.`;
+  }
+
+  [startI, stopI, stepI, omitStart, omitStop].forEach(c => c.addEventListener('input', render));
+
+  el('reset').addEventListener('click', () => {
+    startI.value = 1; stopI.value = 4; stepI.value = 1;
+    omitStart.checked = false; omitStop.checked = false;
+    render();
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Building a total in a loop · Interactive</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=DM+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FAF5EC;--panel:#FFFDF8;--ink:#211C17;--ink-soft:#6E665A;
+    --line:#E6DCC9;--line-strong:#D3C6AC;--accent:#BC4326;--accent-soft:#F4DDD2;
+    --sel-fill:#211C17;--sel-text:#FAF5EC;--ok:#2F6B4F;--radius:14px;
+    --mono:'IBM Plex Mono',ui-monospace,monospace;--sans:'DM Sans',system-ui,sans-serif;--disp:'Fraunces',Georgia,serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.55;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:760px;margin:0 auto;padding:32px 20px 48px}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:600;margin:0 0 6px}
+  h1{font-family:var(--disp);font-weight:600;font-size:clamp(28px,5vw,40px);line-height:1.05;margin:0 0 10px;letter-spacing:-.01em}
+  .lede{color:var(--ink-soft);font-size:16px;margin:0 0 26px;max-width:56ch}
+  .lede code,.mono{font-family:var(--mono)}
+  .stage{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:24px 22px 22px;box-shadow:0 1px 0 var(--line),0 14px 30px -22px rgba(33,28,23,.4)}
+
+  .code{font-family:var(--mono);font-size:13.5px;background:#211C17;color:#F4ECDD;border-radius:10px;padding:16px 18px;overflow-x:auto;line-height:1.7;margin:0 0 22px}
+  .code .cur{background:rgba(188,67,38,.42);border-radius:4px;padding:1px 4px;box-shadow:0 0 0 1px rgba(244,221,210,.35)}
+  .code .dim{opacity:.5}
+
+  .trackScroll{overflow-x:auto;padding-bottom:4px;margin:0 -4px}
+  .track{display:flex;gap:9px;padding:0 4px;min-width:min-content;justify-content:center}
+  .cell{flex:0 0 auto;width:74px;text-align:center}
+  .idx{font-family:var(--mono);font-size:11px;color:var(--ink-soft);margin-bottom:5px}
+  .box{font-family:var(--mono);font-size:15px;font-weight:500;border:1.5px solid var(--line-strong);border-radius:10px;padding:14px 4px;background:#fff;transition:transform .18s,background .18s,border-color .18s,opacity .18s}
+  .lbl{height:16px;margin-top:5px;font-family:var(--mono);font-size:10px;color:var(--accent);font-weight:700}
+  .cell.done .box{opacity:.45}
+  .cell.cur .box{background:var(--sel-fill);color:var(--sel-text);border-color:var(--sel-fill);transform:translateY(-4px);font-weight:600}
+
+  .vars{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:24px}
+  .var{border:1.5px solid var(--line);border-radius:11px;padding:14px;text-align:center;background:#fff}
+  .var .name{font-family:var(--mono);font-size:13px;color:var(--ink-soft);font-weight:600}
+  .var .num{font-family:var(--disp);font-size:30px;font-weight:600;margin-top:4px;transition:color .2s}
+  .var.bump .num{color:var(--accent)}
+
+  .trace{width:100%;border-collapse:collapse;margin-top:24px;font-family:var(--mono);font-size:13px}
+  .trace caption{font-family:var(--sans);font-weight:600;text-align:left;color:var(--ink-soft);font-size:13px;margin-bottom:8px}
+  .trace th,.trace td{border:1px solid var(--line);padding:7px 10px;text-align:center}
+  .trace th{background:var(--accent-soft);font-weight:600}
+  .trace tr.latest td{background:#fff;font-weight:600}
+  .trace .empty td{color:var(--ink-soft);font-style:italic;font-family:var(--sans)}
+
+  .bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:24px;border-top:1px solid var(--line);padding-top:20px}
+  button{font-family:var(--sans);font-weight:600;font-size:14px;border-radius:999px;cursor:pointer;transition:.15s;border:1.5px solid var(--ink)}
+  .btn-primary{background:var(--ink);color:var(--paper);padding:10px 20px}
+  .btn-primary:hover{background:var(--accent);border-color:var(--accent)}
+  .btn-primary:disabled{opacity:.35;cursor:not-allowed;background:var(--ink);border-color:var(--ink)}
+  .btn-ghost{background:transparent;color:var(--ink);padding:10px 16px}
+  .btn-ghost:hover{background:var(--ink);color:var(--paper)}
+  .btn-ghost:disabled{opacity:.35;cursor:not-allowed}
+  .spacer{flex:1}
+  .status-line{font-size:13.5px;color:var(--ink-soft);margin-top:16px;min-height:1.3em}
+  .status-line b{color:var(--ink)}
+  .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);border:0}
+  :focus-visible{outline:2.5px solid var(--accent);outline-offset:3px;border-radius:8px}
+  @media (max-width:560px){.track{justify-content:flex-start}.cell{width:64px}.box{font-size:13px}}
+  @media (prefers-reduced-motion:reduce){*{transition:none !important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="eyebrow">Python · For loops</p>
+  <h1>Building a total in a loop</h1>
+  <p class="lede">The hard part of a loop is that things change <em>between</em> passes. <code>total</code> grows and the counter <code>k</code> ticks up on every iteration, but plain text only shows you the final answer. Step through one pass at a time and watch the state move.</p>
+
+  <div class="stage">
+    <pre class="code" aria-hidden="true"><span id="l1">scores = [61, 99, 72, 87, 80, 95]</span>
+<span id="l2">total = 0</span>
+<span id="l3">k = 0</span>
+
+<span id="l4">for score in scores:</span>
+<span id="l5">    k = k + 1</span>
+<span id="l6">    total = total + score</span></pre>
+
+    <div class="trackScroll">
+      <div class="track" id="track" role="img" aria-label="The list scores with six numbers."></div>
+    </div>
+
+    <div class="vars">
+      <div class="var" id="vScore"><div class="name">score</div><div class="num" id="numScore">—</div></div>
+      <div class="var" id="vTotal"><div class="name">total</div><div class="num" id="numTotal">0</div></div>
+      <div class="var" id="vK"><div class="name">k</div><div class="num" id="numK">0</div></div>
+    </div>
+
+    <table class="trace" id="trace">
+      <caption>Iteration trace</caption>
+      <thead><tr><th>pass (k)</th><th>score</th><th>total after</th></tr></thead>
+      <tbody id="traceBody"></tbody>
+    </table>
+
+    <div class="bar">
+      <button class="btn-ghost" id="back" type="button">◀ Back</button>
+      <button class="btn-primary" id="next" type="button">Next iteration ▶</button>
+      <button class="btn-ghost" id="play" type="button">Auto-play</button>
+      <span class="spacer"></span>
+      <button class="btn-ghost" id="reset" type="button">Reset</button>
+    </div>
+    <p class="status-line" id="statusVis"></p>
+    <p class="sr-only" id="status" role="status" aria-live="polite"></p>
+  </div>
+</div>
+
+<script>
+(function(){
+  const SCORES=[61,99,72,87,80,95];
+  const el=id=>document.getElementById(id);
+  const track=el('track'),traceBody=el('traceBody');
+  let step=0, timer=null; // step 0 = before loop; step s = after s iterations
+
+  SCORES.forEach((n,i)=>{
+    const c=document.createElement('div');c.className='cell';c.dataset.i=i;
+    c.innerHTML=`<div class="idx">${i}</div><div class="box">${n}</div><div class="lbl"></div>`;
+    track.appendChild(c);
+  });
+
+  function lineHi(){
+    ['l4','l5','l6'].forEach(id=>el(id).classList.remove('cur'));
+    ['l1','l2','l3'].forEach(id=>el(id).classList.remove('dim'));
+    if(step>0 && step<=SCORES.length){
+      ['l1','l2','l3'].forEach(id=>el(id).classList.add('dim'));
+      el('l4').classList.add('cur');el('l5').classList.add('cur');el('l6').classList.add('cur');
+    }
+  }
+
+  function bump(node){node.classList.add('bump');setTimeout(()=>node.classList.remove('bump'),220);}
+
+  function render(animate){
+    const total=SCORES.slice(0,step).reduce((a,b)=>a+b,0);
+    const k=step;
+    const score=step>0?SCORES[step-1]:null;
+
+    el('numScore').textContent=score===null?'—':score;
+    el('numTotal').textContent=total;
+    el('numK').textContent=k;
+    if(animate){bump(el('vTotal'));bump(el('vK'));bump(el('vScore'));}
+
+    track.querySelectorAll('.cell').forEach(c=>{
+      const i=+c.dataset.i;c.classList.remove('cur','done');
+      c.querySelector('.lbl').textContent='';
+      if(i<step-1)c.classList.add('done');
+      else if(i===step-1){c.classList.add('cur');c.querySelector('.lbl').textContent='score';}
+    });
+
+    // trace
+    traceBody.innerHTML='';
+    if(step===0){
+      traceBody.innerHTML=`<tr class="empty"><td colspan="3">Before the loop runs — total = 0, k = 0</td></tr>`;
+    }else{
+      let run=0;
+      for(let s=1;s<=step;s++){run+=SCORES[s-1];
+        const tr=document.createElement('tr');if(s===step)tr.className='latest';
+        tr.innerHTML=`<td>${s}</td><td>${SCORES[s-1]}</td><td>${run}</td>`;
+        traceBody.appendChild(tr);
+      }
+    }
+
+    el('next').disabled=step>=SCORES.length;
+    el('back').disabled=step<=0;
+
+    let msg;
+    if(step===0)msg='<b>Before the loop:</b> total = 0, k = 0. Press Next to start the first pass.';
+    else if(step>=SCORES.length)msg=`<b>Loop finished.</b> All ${SCORES.length} scores added — total = ${total}, k ran ${k} times.`;
+    else msg=`<b>Pass ${k}:</b> took score = ${score}, added it → total = ${total}.`;
+    el('statusVis').innerHTML=msg;
+    el('status').textContent=step===0?'Before the loop. total 0, k 0.':
+      `Pass ${k}. score ${score}. total ${total}. k ${k}.`;
+    lineHi();
+  }
+
+  el('next').addEventListener('click',()=>{if(step<SCORES.length){step++;render(true);}});
+  el('back').addEventListener('click',()=>{if(step>0){step--;render(false);}});
+  function stopPlay(){if(timer){clearInterval(timer);timer=null;el('play').textContent='Auto-play';}}
+  el('play').addEventListener('click',()=>{
+    if(timer){stopPlay();return;}
+    if(step>=SCORES.length)step=0;
+    el('play').textContent='Pause';
+    timer=setInterval(()=>{if(step<SCORES.length){step++;render(true);}else stopPlay();},900);
+  });
+  el('reset').addEventListener('click',()=>{stopPlay();step=0;render(false);});
+
+  render(false);
+})();
+</script>
+</body>
+</html>
