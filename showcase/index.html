@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Evolve Interactives · Reviewed Set</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=DM+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FAF5EC;--panel:#FFFDF8;--ink:#211C17;--ink-soft:#6E665A;
+    --line:#E6DCC9;--line-strong:#D3C6AC;--accent:#BC4326;--accent-soft:#F4DDD2;
+    --radius:14px;--mono:'IBM Plex Mono',ui-monospace,monospace;--sans:'DM Sans',system-ui,sans-serif;--disp:'Fraunces',Georgia,serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.55;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:880px;margin:0 auto;padding:48px 20px 60px}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:600;margin:0 0 8px}
+  h1{font-family:var(--disp);font-weight:600;font-size:clamp(33px,6vw,50px);line-height:1.02;margin:0 0 14px;letter-spacing:-.015em}
+  .lede{color:var(--ink-soft);font-size:17px;margin:0 0 14px;max-width:62ch}
+  .meta{font-family:var(--mono);font-size:12.5px;color:var(--ink-soft);margin:0 0 38px}
+  .meta b{color:var(--ink);font-weight:600}
+
+  .grid{display:grid;gap:16px}
+  .card{display:flex;align-items:stretch;gap:18px;text-decoration:none;color:inherit;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:22px;box-shadow:0 1px 0 var(--line);transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease}
+  .card:hover{transform:translateY(-3px);border-color:var(--line-strong);box-shadow:0 1px 0 var(--line),0 16px 30px -22px rgba(33,28,23,.5)}
+  .num{font-family:var(--disp);font-size:34px;font-weight:600;color:var(--accent);line-height:1;min-width:42px;flex:0 0 auto;padding-top:2px}
+  .body{flex:1;min-width:0}
+  .toprow{display:flex;align-items:center;gap:10px;margin-bottom:4px;flex-wrap:wrap}
+  .ctitle{font-family:var(--disp);font-size:21px;font-weight:600;letter-spacing:-.01em;margin:0}
+  .vtag{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.06em;background:var(--accent-soft);color:var(--accent);border-radius:999px;padding:2px 8px}
+  .skill{font-family:var(--mono);font-size:12px;color:var(--ink-soft);margin:0 0 9px}
+  .skill .dot{color:var(--line-strong);margin:0 6px}
+  .desc{font-size:14.5px;color:var(--ink-soft);margin:0;max-width:54ch}
+  .go{flex:0 0 auto;align-self:center;font-family:var(--sans);font-weight:600;font-size:14px;color:var(--ink);border:1.5px solid var(--line-strong);border-radius:999px;padding:8px 16px;white-space:nowrap;transition:.16s}
+  .card:hover .go{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+
+  .foot{margin-top:42px;border-top:1px solid var(--line);padding-top:20px;font-size:13px;color:var(--ink-soft);max-width:64ch}
+  :focus-visible{outline:2.5px solid var(--accent);outline-offset:3px;border-radius:14px}
+  @media (max-width:560px){.card{flex-direction:column;gap:10px}.num{font-size:26px}.go{align-self:flex-start}}
+  @media (prefers-reduced-motion:reduce){*{transition:none !important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="eyebrow">Nebius Evolve · Interactive learning</p>
+  <h1>The reviewed interactive set</h1>
+  <p class="lede">Five learner-manipulable interactives that teach core Python and pandas subskills — built to the Evolve multimedia quality standards and refined through structured review. Each is bounded to a single subskill and explorable in under a minute. Click any one to try it.</p>
+  <p class="meta">Where we landed after review · <b>three</b> at v2, <b>two</b> revised to v3 on review feedback</p>
+
+  <div class="grid">
+    <a class="card" href="./list-slicing-interactive.html">
+      <span class="num" aria-hidden="true">1</span>
+      <span class="body">
+        <span class="toprow"><span class="ctitle">List slicing</span><span class="vtag">v2</span></span>
+        <p class="skill">Creating and accessing lists <span class="dot">·</span> Extracting list ranges</p>
+        <p class="desc">Drag the start and stop sliders and watch which elements land in the new list — and why a slice stops just before the end.</p>
+      </span>
+      <span class="go" aria-hidden="true">Open →</span>
+    </a>
+
+    <a class="card" href="./for-loop-trace-interactive.html">
+      <span class="num" aria-hidden="true">2</span>
+      <span class="body">
+        <span class="toprow"><span class="ctitle">For-loop trace</span><span class="vtag">v2</span></span>
+        <p class="skill">For loops in Python <span class="dot">·</span> Iterating &amp; tracking totals</p>
+        <p class="desc">Step through the loop and watch the code itself light up line by line as values accumulate into a running total.</p>
+      </span>
+      <span class="go" aria-hidden="true">Open →</span>
+    </a>
+
+    <a class="card" href="./merge-join-interactive.html">
+      <span class="num" aria-hidden="true">3</span>
+      <span class="body">
+        <span class="toprow"><span class="ctitle">Merge join</span><span class="vtag">v2</span></span>
+        <p class="skill">Merging and joining data <span class="dot">·</span> Matching &amp; unmatched rows</p>
+        <p class="desc">Switch the join type and watch the result become exactly what pandas returns — rows kept or dropped, NaN where it truly appears.</p>
+      </span>
+      <span class="go" aria-hidden="true">Open →</span>
+    </a>
+
+    <a class="card" href="./boolean-precedence-interactive.html">
+      <span class="num" aria-hidden="true">4</span>
+      <span class="body">
+        <span class="toprow"><span class="ctitle">Boolean precedence</span><span class="vtag">v3</span></span>
+        <p class="skill">Boolean logic in Python <span class="dot">·</span> Controlling evaluation order</p>
+        <p class="desc">Set real name and age data, watch the condition evaluate each comparison, and see how <em>and</em> groups before <em>or</em> — input, code, and result side by side.</p>
+      </span>
+      <span class="go" aria-hidden="true">Open →</span>
+    </a>
+
+    <a class="card" href="./read-csv-params-interactive.html">
+      <span class="num" aria-hidden="true">5</span>
+      <span class="body">
+        <span class="toprow"><span class="ctitle">read_csv parameters</span><span class="vtag">v3</span></span>
+        <p class="skill">Importing CSV files <span class="dot">·</span> Separators &amp; comma decimals</p>
+        <p class="desc">Change the read_csv parameters and watch raw text reshape into a clean, correctly-typed table — input data, code, and result in one view.</p>
+      </span>
+      <span class="go" aria-hidden="true">Open →</span>
+    </a>
+  </div>
+
+  <p class="foot">Built by the Evolve multimedia team. Each interactive is a single self-contained page — accessible, keyboard-navigable, and consistent with the platform's visual standards.</p>
+</div>
+</body>
+</html>

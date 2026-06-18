@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Boolean precedence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FAF5EC;--panel:#FFFDF8;--ink:#211C17;--ink-soft:#6E665A;
+    --line:#E6DCC9;--line-strong:#D3C6AC;--accent:#BC4326;--accent-soft:#F4DDD2;
+    --true:#2F6B4F;--true-soft:#DCEFE4;--false:#8A5A2B;--false-soft:#F1E4D2;
+    --radius:14px;--mono:'IBM Plex Mono',ui-monospace,monospace;--sans:'DM Sans',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:600px;margin:0 auto;padding:20px}
+  .stage{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:22px}
+
+  .zone{padding:16px 0}
+  .zone+.zone{border-top:1px solid var(--line)}
+  .zone:first-child{padding-top:2px}
+  .siglabel{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);font-weight:600;margin:0 0 12px}
+
+  /* INPUT DATA */
+  .field{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+  .field:last-child{margin-bottom:0}
+  .fname{font-family:var(--mono);font-size:14px;font-weight:500;min-width:42px}
+  .seg{display:inline-flex;gap:7px;flex-wrap:wrap}
+  .seg button{font-family:var(--mono);font-weight:600;font-size:13px;border:1.5px solid var(--line-strong);background:#fff;color:var(--ink);border-radius:8px;padding:7px 12px;cursor:pointer;transition:.15s}
+  .seg button[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+  .agewrap{display:flex;align-items:center;gap:12px;flex:1}
+  .agewrap input[type=range]{flex:1;accent-color:var(--accent);height:26px;cursor:pointer}
+  .ageval{font-family:var(--mono);font-size:15px;font-weight:600;color:var(--accent);min-width:28px;text-align:right}
+
+  /* CODE */
+  .code{font-family:var(--mono);font-size:14px;background:#211C17;color:#E9DFD0;border-radius:10px;padding:15px 16px;line-height:2.1;overflow-x:auto}
+  .cmp{position:relative;white-space:nowrap}
+  .badge{font-size:10px;font-weight:700;padding:1px 6px;border-radius:5px;margin-left:5px;vertical-align:middle}
+  .badge.t{background:var(--true-soft);color:var(--true)}.badge.f{background:var(--false-soft);color:var(--false)}
+  .kw{color:#E8A88F;font-weight:600}
+  .grp{background:rgba(188,67,38,.30);border-radius:5px;padding:2px 5px}
+  .parenToggle{display:inline-flex;align-items:center;gap:9px;font-size:13px;font-weight:500;border:1.5px solid var(--line-strong);background:#fff;border-radius:999px;padding:7px 13px;cursor:pointer;transition:.15s;margin-top:14px}
+  .parenToggle.on{border-color:var(--accent);background:var(--accent-soft)}
+  .parenToggle input{accent-color:var(--accent);width:14px;height:14px}
+
+  /* RESULT */
+  .steps{font-family:var(--mono);font-size:13px;color:var(--ink-soft);line-height:1.9;margin-bottom:12px}
+  .steps .chip{font-weight:700;padding:1px 7px;border-radius:5px}
+  .chip.t{background:var(--true-soft);color:var(--true)}.chip.f{background:var(--false-soft);color:var(--false)}
+  .final{display:flex;align-items:center;gap:12px}
+  .final .word{font-family:var(--mono);font-size:clamp(26px,6vw,36px);font-weight:600;line-height:1}
+  .final .word.t{color:var(--true)}.final .word.f{color:var(--false)}
+  .final .pre{font-family:var(--mono);font-size:14px;color:var(--ink-soft)}
+
+  .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);border:0}
+  :focus-visible{outline:2.5px solid var(--accent);outline-offset:3px;border-radius:8px}
+  @media (prefers-reduced-motion:reduce){*{transition:none !important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1 class="sr-only">Interactive: boolean operator precedence. Set the name and age input data and watch the Python condition evaluate, with and grouping before or.</h1>
+  <div class="stage">
+
+    <!-- INPUT DATA -->
+    <div class="zone">
+      <p class="siglabel">Input data</p>
+      <div class="field">
+        <span class="fname">name =</span>
+        <div class="seg" id="nameSeg" role="group" aria-label="name value">
+          <button data-v="Steven" type="button" aria-pressed="true">'Steven'</button>
+          <button data-v="Carol" type="button" aria-pressed="false">'Carol'</button>
+          <button data-v="Riley" type="button" aria-pressed="false">'Riley'</button>
+        </div>
+      </div>
+      <div class="field">
+        <span class="fname">age =</span>
+        <div class="agewrap">
+          <input type="range" id="age" min="18" max="40" value="24" step="1" aria-label="age value">
+          <span class="ageval" id="ageVal">24</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- CODE -->
+    <div class="zone">
+      <p class="siglabel">Code</p>
+      <div class="code" id="code"></div>
+      <label class="parenToggle" id="pWrap"><input type="checkbox" id="paren"> add parentheses around the <code>or</code></label>
+    </div>
+
+    <!-- RESULT -->
+    <div class="zone">
+      <p class="siglabel">Result</p>
+      <div class="steps" id="steps"></div>
+      <div class="final"><span class="pre">result =</span><span class="word" id="word">—</span></div>
+    </div>
+
+    <p class="sr-only" id="status" role="status" aria-live="polite"></p>
+  </div>
+</div>
+
+<script>
+(function(){
+  const el=id=>document.getElementById(id);
+  const st={name:'Steven',age:24,paren:false};
+  const tf=v=>v?'True':'False';
+  const badge=v=>`<span class="badge ${v?'t':'f'}">${tf(v)}</span>`;
+  const chip=v=>`<span class="chip ${v?'t':'f'}">${tf(v)}</span>`;
+
+  el('nameSeg').querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{
+    st.name=b.dataset.v;
+    el('nameSeg').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x.dataset.v===st.name));
+    render();
+  }));
+  el('age').addEventListener('input',e=>{st.age=+e.target.value;el('ageVal').textContent=st.age;render();});
+  el('paren').addEventListener('change',e=>{st.paren=e.target.checked;el('pWrap').classList.toggle('on',st.paren);render();});
+
+  function render(){
+    const c1=st.name==='Steven', c2=st.name==='Carol', c3=st.age<=30;
+
+    // CODE with live per-comparison truth + precedence grouping
+    const e1=`<span class="cmp">name == 'Steven'${badge(c1)}</span>`;
+    const e2=`<span class="cmp">name == 'Carol'${badge(c2)}</span>`;
+    const e3=`<span class="cmp">age &lt;= 30${badge(c3)}</span>`;
+    let codeExpr, result, stepHtml;
+    if(!st.paren){
+      const bc=c2&&c3; result=c1||bc;
+      codeExpr=`result = ${e1} <span class="kw">or</span> <span class="grp">${e2} <span class="kw">and</span> ${e3}</span>`;
+      stepHtml=`and binds first → ${chip(c2)} and ${chip(c3)} = ${chip(bc)}<br>then or → ${chip(c1)} or ${chip(bc)} = ${chip(result)}`;
+    }else{
+      const ab=c1||c2; result=ab&&c3;
+      codeExpr=`result = <span class="grp">${e1} <span class="kw">or</span> ${e2}</span> <span class="kw">and</span> ${e3}`;
+      stepHtml=`parentheses first → ${chip(c1)} or ${chip(c2)} = ${chip(ab)}<br>then and → ${chip(ab)} and ${chip(c3)} = ${chip(result)}`;
+    }
+    el('code').innerHTML=codeExpr;
+    el('steps').innerHTML=stepHtml;
+    el('word').textContent=tf(result);
+    el('word').className='word '+(result?'t':'f');
+    el('status').textContent=`With name = '${st.name}' and age = ${st.age}, result is ${tf(result)}.`;
+  }
+  render();
+})();
+</script>
+</body>
+</html>
